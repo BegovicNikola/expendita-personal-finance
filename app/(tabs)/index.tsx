@@ -1,11 +1,12 @@
 import { QuickActionButtons } from "@/components/quick-action-buttons";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <QuickActionButtons />
-    </View>
+    </SafeAreaView>
   );
 }
 
