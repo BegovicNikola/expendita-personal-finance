@@ -5,12 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "expendita-personal-finance",
+    "scheme": "expenditapersonalfinance",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.begaa.expenditapersonalfinance"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -20,8 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.begaa.expenditapersonalfinance"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -45,19 +43,6 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "ceedb0bd-8ff6-4052-ab79-146d53b3ca8b"
-      }
-    },
-    "owner": "begaa",
-    "updates": {
-      "url": "https://u.expo.dev/ceedb0bd-8ff6-4052-ab79-146d53b3ca8b"
-    },
-    "runtimeVersion": {
-      "policy": "appVersion"
     }
   }
 }
