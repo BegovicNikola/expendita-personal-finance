@@ -7,17 +7,28 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import type { RelativePathString } from "expo-router";
 
 import { ScannerOverlay } from "@/components/scanner-overlay";
+import { insertReceipt } from "@/db/receipts";
+import { detectQRType, parseNbsIps, parseSufPurs } from "@/lib/qr-parser";
+import {
+  ReceiptScraper,
+  ScrapedReceiptData,
+} from "@/lib/receipt-scraper";
 
 export default function ScanReceiptScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [scraperUrl, setScraperUrl] = useState<string | null>(null);
+  const [rawQrData, setRawQrData] = useState<string>("");
 
   // Loading state while checking permissions
   if (!permission) {
@@ -59,14 +70,68 @@ export default function ScanReceiptScreen() {
     );
   }
 
-  const handleBarcodeScanned = (result: BarcodeScanningResult) => {
-    if (scanned) return;
+  const handleBarcodeScanned = async (result: BarcodeScanningResult) => {
+    if (scanned || isProcessing) return;
     setScanned(true);
+    setIsProcessing(true);
 
-    // TODO: Process the QR code data (e.g., fetch receipt details)
+    const qrType = detectQRType(result.data);
     console.log("Scanned QR code:", result.data);
+    console.log("Detected type:", qrType);
 
-    router.back();
+    if (qrType === "nbs-ips") {
+      // Parse NBS IPS QR code directly
+      const receipt = parseNbsIps(result.data);
+
+      try {
+        await insertReceipt(receipt);
+        // Navigate silently to receipts screen
+        router.replace("/(tabs)/receipts" as RelativePathString);
+      } catch (error) {
+        console.error("Failed to save receipt:", error);
+        Alert.alert("Error", "Failed to save receipt", [
+          { text: "OK", onPress: () => setScanned(false) },
+        ]);
+        setIsProcessing(false);
+      }
+    } else if (qrType === "suf-purs") {
+      // Start WebView scraping for SUF/PURS URL
+      setRawQrData(result.data);
+      setScraperUrl(result.data);
+      // Processing continues in handleScrapedData
+    } else {
+      setIsProcessing(false);
+      Alert.alert("Unknown QR Code", "This QR code format is not recognized", [
+        { text: "OK", onPress: () => setScanned(false) },
+      ]);
+    }
+  };
+
+  const handleScrapedData = async (data: ScrapedReceiptData) => {
+    setScraperUrl(null);
+
+    const receipt = parseSufPurs(data, scraperUrl!, rawQrData);
+
+    try {
+      await insertReceipt(receipt);
+      // Navigate silently to receipts screen
+      router.replace("/(tabs)/receipts" as RelativePathString);
+    } catch (error) {
+      console.error("Failed to save receipt:", error);
+      Alert.alert("Error", "Failed to save receipt", [
+        { text: "OK", onPress: () => setScanned(false) },
+      ]);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleScraperError = (error: string) => {
+    setScraperUrl(null);
+    setIsProcessing(false);
+    console.error("Scraper error:", error);
+    Alert.alert("Scraping Failed", error, [
+      { text: "OK", onPress: () => setScanned(false) },
+    ]);
   };
 
   return (
@@ -78,6 +143,25 @@ export default function ScanReceiptScreen() {
         onBarcodeScanned={handleBarcodeScanned}
       />
       <ScannerOverlay scanned={scanned} onScanAgain={() => setScanned(false)} />
+
+      {/* Processing overlay */}
+      {isProcessing && (
+        <View style={styles.processingOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.processingText}>
+            {scraperUrl ? "Loading receipt data..." : "Saving receipt..."}
+          </Text>
+        </View>
+      )}
+
+      {/* Hidden WebView for scraping SUF/PURS pages */}
+      {scraperUrl && (
+        <ReceiptScraper
+          url={scraperUrl}
+          onScraped={handleScrapedData}
+          onError={handleScraperError}
+        />
+      )}
     </View>
   );
 }
@@ -131,5 +215,16 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: "#9BA1A6",
     fontSize: 16,
+  },
+  processingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  },
+  processingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#fff",
   },
 });
