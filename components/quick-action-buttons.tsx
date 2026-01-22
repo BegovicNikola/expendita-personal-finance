@@ -4,14 +4,16 @@ import { useThemeColor } from "@/hooks/use-theme-color";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 export function QuickActionButtons() {
-  const color = useThemeColor({ light: Colors.light.accent, dark: Colors.dark.accent }, 'accent');
+  const iconColor = useThemeColor({ light: Colors.light.background, dark: Colors.dark.background }, 'background');
+  const backgroundColor = useThemeColor({ light: Colors.light.accent, dark: Colors.dark.accent }, 'accent');
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.button}>
-        <IconSymbol size={28} name="format-list-bulleted-add" color={color} />
+      <TouchableOpacity style={[styles.button, { backgroundColor }]}>
+        <IconSymbol size={28} name="format-list-bulleted-add" color={iconColor} />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button}>
-        <IconSymbol size={28} name="qr-code-scanner" color={color} />
+      <TouchableOpacity style={[styles.button, { backgroundColor }]}>
+        <IconSymbol size={28} name="qr-code-scanner" color={iconColor} />
       </TouchableOpacity>
     </View>
   );
@@ -27,7 +29,6 @@ const styles = StyleSheet.create({
   },
   button: {
     padding: 12,
-    backgroundColor: Colors.light.accent,
     borderRadius: 28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
