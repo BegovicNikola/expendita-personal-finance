@@ -25,11 +25,51 @@ interface ReceiptScraperProps {
 const EXTRACTION_SCRIPT = `
   (function() {
     try {
-      // TODO: Add selectors based on page structure
-      // These selectors need to be determined by inspecting the actual page
-      const companyName = ''; // TODO: Extract from page (look for "Предузеће" label)
-      const total = 0;        // TODO: Extract "Укупан износ" or "За уплату" value
-      const dateTime = '';    // TODO: Extract "ПФР време" value
+      // The page has a "Журнал" section with preformatted receipt text
+      // This is the most reliable source for extracting data
+      // Format example:
+      // ============ ФИСКАЛНИ РАЧУН ============
+      //                100049486                
+      //      dm drogerie markt doo Beograd      
+      // ...
+      // Укупан износ:                   2.184,00
+      // ...
+      // ПФР време:          18.01.2026. 14:57:00
+
+      const text = document.body.textContent || '';
+      
+      // Extract company name from the receipt journal
+      // Look for the line after the tax ID (9-digit number) in the receipt header
+      let companyName = '';
+      const receiptMatch = text.match(/ФИСКАЛНИ РАЧУН[=\\s]+([0-9]{9})\\s+([^\\n]+)/);
+      if (receiptMatch && receiptMatch[2]) {
+        companyName = receiptMatch[2].trim();
+      }
+      
+      // Fallback: try to find "Предузеће:" in the print preview section
+      if (!companyName) {
+        const companyMatch = text.match(/Предузеће:\\s*([^\\n]+)/);
+        if (companyMatch) {
+          companyName = companyMatch[1].trim();
+        }
+      }
+
+      // Extract total from "Укупан износ:" in the receipt journal
+      // Format: "2.184,00" (Serbian: dot for thousands, comma for decimal)
+      let total = 0;
+      const totalMatch = text.match(/Укупан износ:\\s*([0-9.,]+)/);
+      if (totalMatch) {
+        // Convert Serbian format (1.234,56) to number
+        total = parseFloat(totalMatch[1].replace(/\\./g, '').replace(',', '.'));
+      }
+
+      // Extract datetime from "ПФР време:" in the receipt journal
+      // Format: "18.01.2026. 14:57:00"
+      let dateTime = '';
+      const dateMatch = text.match(/ПФР време:\\s*(\\d{1,2}\\.\\d{1,2}\\.\\d{4}\\.\\s*\\d{2}:\\d{2}:\\d{2})/);
+      if (dateMatch) {
+        dateTime = dateMatch[1].trim();
+      }
 
       window.ReactNativeWebView.postMessage(JSON.stringify({
         success: true,

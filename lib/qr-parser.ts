@@ -41,7 +41,7 @@ export function parseNbsIps(data: string): ParsedReceipt {
     data.split("|").map((pair) => {
       const [key, ...rest] = pair.split(":");
       return [key, rest.join(":")];
-    })
+    }),
   );
 
   // Extract company name from N field
@@ -67,17 +67,38 @@ export function parseNbsIps(data: string): ParsedReceipt {
 }
 
 /**
+ * Convert Serbian date format to ISO format
+ * Input: "18.01.2026. 14:57:00" or "18.1.2026. 14:57:00"
+ * Output: "2026-01-18T14:57:00"
+ */
+function convertSerbianDateToISO(serbianDate: string): string {
+  // Parse: DD.MM.YYYY. HH:MM:SS (note trailing period after year)
+  const match = serbianDate.match(
+    /(\d{1,2})\.(\d{1,2})\.(\d{4})\.\s*(\d{2}):(\d{2}):(\d{2})/,
+  );
+  if (!match) {
+    return new Date().toISOString(); // Fallback to current time
+  }
+
+  const [, day, month, year, hours, minutes, seconds] = match;
+  const paddedDay = day.padStart(2, "0");
+  const paddedMonth = month.padStart(2, "0");
+
+  return `${year}-${paddedMonth}-${paddedDay}T${hours}:${minutes}:${seconds}`;
+}
+
+/**
  * Parse SUF/PURS scraped data into receipt format
  */
 export function parseSufPurs(
   scrapedData: { companyName: string; total: number; dateTime: string },
   url: string,
-  rawData: string
+  rawData: string,
 ): ParsedReceipt {
   return {
-    companyName: "", // TODO: extract from scrapedData.companyName
-    total: 0, // TODO: extract from scrapedData.total
-    dateTime: "", // TODO: extract from scrapedData.dateTime
+    companyName: scrapedData.companyName,
+    total: scrapedData.total,
+    dateTime: convertSerbianDateToISO(scrapedData.dateTime),
     verificationURL: url,
     rawData: rawData,
   };
