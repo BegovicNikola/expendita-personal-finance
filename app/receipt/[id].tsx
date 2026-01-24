@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { getReceiptById, updateReceipt } from "@/db/receipts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { formatDateParts, parseToISO } from "@/lib/date-utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -16,7 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ReceiptDetail() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string; }>();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,9 +50,9 @@ export default function ReceiptDetail() {
       try {
         const data = await getReceiptById(Number(id));
         if (data) {
-          const dateObj = new Date(data.dateTime);
-          const dateStr = dateObj.toISOString().split("T")[0]; // YYYY-MM-DD
-          const timeStr = dateObj.toTimeString().slice(0, 5); // HH:MM
+          const { date: dateStr, time: timeStr } = formatDateParts(
+            new Date(data.dateTime)
+          );
 
           setCompanyName(data.companyName);
           setTotal(data.total.toString());
@@ -78,7 +79,7 @@ export default function ReceiptDetail() {
 
     setIsSaving(true);
     try {
-      const dateTime = new Date(`${date}T${time}`).toISOString();
+      const dateTime = parseToISO(date, time);
       await updateReceipt(Number(id), {
         companyName,
         total: parseFloat(total) || 0,
@@ -164,7 +165,7 @@ export default function ReceiptDetail() {
                   style={inputStyle}
                   value={date}
                   onChangeText={setDate}
-                  placeholder="YYYY-MM-DD"
+                  placeholder="DD.MM.YYYY"
                   placeholderTextColor={colors.icon}
                 />
               </View>

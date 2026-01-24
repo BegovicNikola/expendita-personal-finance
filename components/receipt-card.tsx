@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { formatDateTime } from "@/lib/date-utils";
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
 
@@ -19,20 +20,6 @@ function formatCurrency(amount: number): string {
     .replace(".", ",")
     .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   return `${formatted} RSD`;
-}
-
-/**
- * Format ISO date string to readable format (e.g., "Jan 22, 2026 at 14:30")
- */
-function formatDateTime(isoString: string): string {
-  const date = new Date(isoString);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export function ReceiptCard({ id, companyName, total, dateTime }: ReceiptCardProps) {
