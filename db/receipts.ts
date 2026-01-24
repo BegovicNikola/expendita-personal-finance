@@ -1,7 +1,7 @@
 import { getDatabase } from "./schema";
 
 export interface Receipt {
-  id?: number;
+  id: number;
   companyName: string;
   total: number;
   dateTime: string;
@@ -48,6 +48,45 @@ export async function getReceiptById(id: number): Promise<Receipt | null> {
   );
 
   return result ?? null;
+}
+
+export async function updateReceipt(
+  id: number,
+  updates: Partial<Omit<Receipt, "id">>,
+): Promise<void> {
+  const db = await getDatabase();
+
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (updates.companyName !== undefined) {
+    fields.push("companyName = ?");
+    values.push(updates.companyName);
+  }
+  if (updates.total !== undefined) {
+    fields.push("total = ?");
+    values.push(updates.total);
+  }
+  if (updates.dateTime !== undefined) {
+    fields.push("dateTime = ?");
+    values.push(updates.dateTime);
+  }
+  if (updates.verificationURL !== undefined) {
+    fields.push("verificationURL = ?");
+    values.push(updates.verificationURL);
+  }
+  if (updates.rawData !== undefined) {
+    fields.push("rawData = ?");
+    values.push(updates.rawData);
+  }
+
+  if (fields.length === 0) return;
+
+  values.push(id);
+  await db.runAsync(
+    `UPDATE receipts SET ${fields.join(", ")} WHERE id = ?`,
+    values,
+  );
 }
 
 export async function deleteReceipt(id: number): Promise<void> {

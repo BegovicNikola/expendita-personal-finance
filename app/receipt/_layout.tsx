@@ -5,6 +5,7 @@ export default function ReceiptLayout() {
     <Stack>
       <Stack.Screen name="add" options={{ title: "Add Receipt" }} />
       <Stack.Screen name="scan" options={{ title: "Scan Receipt" }} />
+      <Stack.Screen name="[id]" options={{ title: "Receipt" }} />
     </Stack>
   );
 }

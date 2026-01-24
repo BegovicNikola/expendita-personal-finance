@@ -1,8 +1,10 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Pressable, StyleSheet, Text } from "react-native";
 
 interface ReceiptCardProps {
+  id: number;
   companyName: string;
   total: number;
   dateTime: string;
@@ -33,17 +35,24 @@ function formatDateTime(isoString: string): string {
   });
 }
 
-export function ReceiptCard({ companyName, total, dateTime }: ReceiptCardProps) {
+export function ReceiptCard({ id, companyName, total, dateTime }: ReceiptCardProps) {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push(`/receipt/${id}`);
+  };
 
   return (
-    <View
-      style={[
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => [
         styles.card,
         {
           backgroundColor: colorScheme === "dark" ? "#1E2022" : "#fff",
           borderColor: colorScheme === "dark" ? "#2A2E31" : "#E5E7EB",
+          opacity: pressed ? 0.7 : 1,
         },
       ]}
     >
@@ -56,7 +65,7 @@ export function ReceiptCard({ companyName, total, dateTime }: ReceiptCardProps) 
       <Text style={[styles.dateTime, { color: colors.icon }]}>
         {formatDateTime(dateTime)}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

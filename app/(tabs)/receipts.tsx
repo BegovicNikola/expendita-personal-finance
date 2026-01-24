@@ -63,9 +63,10 @@ export default function Receipts() {
 
       <FlatList
         data={receipts}
-        keyExtractor={(item) => item.id?.toString() ?? ""}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <ReceiptCard
+            id={item.id}
             companyName={item.companyName}
             total={item.total}
             dateTime={item.dateTime}
