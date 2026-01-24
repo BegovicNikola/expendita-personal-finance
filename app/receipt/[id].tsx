@@ -31,7 +31,7 @@ function formatSerbianNumber(value: number): string {
  * Parse Serbian formatted string to number (e.g., "1.234,56" -> 1234.56)
  */
 function parseSerbianNumber(value: string): number | null {
-  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const normalized = value.replace(/\./g, "").replace(/,/g, ".");
   const result = parseFloat(normalized);
   return isNaN(result) ? null : result;
 }
@@ -83,6 +83,7 @@ export default function ReceiptDetail() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
 
@@ -138,7 +139,13 @@ export default function ReceiptDetail() {
   }, [id]);
 
   const handleSave = async () => {
-    if (!id || !hasChanges) return;
+    if (!id) return;
+
+    // If no changes, just exit edit mode
+    if (!hasChanges) {
+      setIsEditing(false);
+      return;
+    }
 
     const parsedTotal = parseSerbianNumber(total);
     if (parsedTotal === null || parsedTotal <= 0) {
@@ -154,19 +161,27 @@ export default function ReceiptDetail() {
         total: parsedTotal,
         dateTime,
       });
-      setOriginalValues({ companyName, total, date, time });
-      router.back();
+      router.replace("/receipts");
     } catch (error) {
       console.error("Failed to save receipt:", error);
-    } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleEditSavePress = () => {
+    if (isEditing) {
+      handleSave();
+    } else {
+      setIsEditing(true);
     }
   };
 
   const inputStyle = [
     styles.input,
     {
-      backgroundColor: colorScheme === "dark" ? "#1E2022" : "#fff",
+      backgroundColor: isEditing
+        ? colorScheme === "dark" ? "#1E2022" : "#fff"
+        : colorScheme === "dark" ? "#151718" : "#F9FAFB",
       borderColor: colorScheme === "dark" ? "#2A2E31" : "#E5E7EB",
       color: colors.text,
     },
@@ -210,6 +225,7 @@ export default function ReceiptDetail() {
                 onChangeText={setCompanyName}
                 placeholder="Enter company name"
                 placeholderTextColor={colors.icon}
+                editable={isEditing}
               />
             </View>
 
@@ -224,6 +240,7 @@ export default function ReceiptDetail() {
                 placeholder="1.234,56"
                 placeholderTextColor={colors.icon}
                 keyboardType="decimal-pad"
+                editable={isEditing}
               />
             </View>
 
@@ -236,6 +253,7 @@ export default function ReceiptDetail() {
                   onChangeText={setDate}
                   placeholder="DD.MM.YYYY"
                   placeholderTextColor={colors.icon}
+                  editable={isEditing}
                 />
               </View>
 
@@ -249,27 +267,27 @@ export default function ReceiptDetail() {
                   onChangeText={setTime}
                   placeholder="HH:MM"
                   placeholderTextColor={colors.icon}
+                  editable={isEditing}
                 />
               </View>
             </View>
           </View>
 
-          {hasChanges && (
-            <View style={styles.saveButtonContainer}>
-              <Text
-                style={[
-                  styles.saveButton,
-                  {
-                    backgroundColor: colors.tint,
-                    opacity: isSaving ? 0.6 : 1,
-                  },
-                ]}
-                onPress={handleSave}
-              >
-                {isSaving ? "Saving..." : "Save Changes"}
-              </Text>
-            </View>
-          )}
+          <View style={styles.buttonContainer}>
+            <Text
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: isEditing ? colors.tint : colorScheme === "dark" ? "#2A2E31" : "#E5E7EB",
+                  color: isEditing ? "#fff" : colors.text,
+                  opacity: isSaving ? 0.6 : 1,
+                },
+              ]}
+              onPress={handleEditSavePress}
+            >
+              {isSaving ? "Saving..." : isEditing ? "Save" : "Edit"}
+            </Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -319,11 +337,10 @@ const styles = StyleSheet.create({
   flex1: {
     flex: 1,
   },
-  saveButtonContainer: {
+  buttonContainer: {
     marginTop: 32,
   },
-  saveButton: {
-    color: "#fff",
+  actionButton: {
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
