@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,6 +16,67 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+/**
+ * Format number as Serbian format (e.g., 1234.56 -> "1.234,56")
+ */
+function formatSerbianNumber(value: number): string {
+  return value
+    .toFixed(2)
+    .replace(".", ",")
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/**
+ * Parse Serbian formatted string to number (e.g., "1.234,56" -> 1234.56)
+ */
+function parseSerbianNumber(value: string): number | null {
+  const normalized = value.replace(/\./g, "").replace(",", ".");
+  const result = parseFloat(normalized);
+  return isNaN(result) ? null : result;
+}
+
+/**
+ * Format input as user types with Serbian thousand separators.
+ * - Auto-adds dots as thousand separators
+ * - Allows only one comma for decimal
+ * - Limits decimal to 2 digits
+ */
+function formatTotalInput(text: string, previousValue: string): string {
+  // Remove any character that's not digit or comma
+  let cleaned = text.replace(/[^\d,]/g, "");
+
+  // Allow empty field
+  if (cleaned === "") {
+    return "";
+  }
+
+  // Block second comma - if there's more than one, revert to previous value
+  const commaCount = (cleaned.match(/,/g) || []).length;
+  if (commaCount > 1) {
+    return previousValue;
+  }
+
+  // Split by comma (decimal separator)
+  const parts = cleaned.split(",");
+
+  // Get integer part (only digits)
+  let integerPart = parts[0].replace(/\D/g, "");
+
+  // Remove leading zeros (but keep single "0" if user types it)
+  integerPart = integerPart.replace(/^0+/, "") || (parts[0] === "0" ? "0" : "");
+
+  // Add thousand separators (dots)
+  integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  // Get decimal part (limit to 2 digits)
+  if (parts.length > 1) {
+    const decimalPart = parts[1].replace(/\D/g, "").slice(0, 2);
+    return `${integerPart},${decimalPart}`;
+  }
+
+  return integerPart;
+}
 
 export default function ReceiptDetail() {
   const { id } = useLocalSearchParams<{ id: string; }>();
@@ -54,13 +116,14 @@ export default function ReceiptDetail() {
             new Date(data.dateTime)
           );
 
+          const formattedTotal = formatSerbianNumber(data.total);
           setCompanyName(data.companyName);
-          setTotal(data.total.toString());
+          setTotal(formattedTotal);
           setDate(dateStr);
           setTime(timeStr);
           setOriginalValues({
             companyName: data.companyName,
-            total: data.total.toString(),
+            total: formattedTotal,
             date: dateStr,
             time: timeStr,
           });
@@ -77,12 +140,18 @@ export default function ReceiptDetail() {
   const handleSave = async () => {
     if (!id || !hasChanges) return;
 
+    const parsedTotal = parseSerbianNumber(total);
+    if (parsedTotal === null || parsedTotal <= 0) {
+      Alert.alert("Greška", "Iznos mora biti veći od 0 RSD");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const dateTime = parseToISO(date, time);
       await updateReceipt(Number(id), {
         companyName,
-        total: parseFloat(total) || 0,
+        total: parsedTotal,
         dateTime,
       });
       setOriginalValues({ companyName, total, date, time });
@@ -151,8 +220,8 @@ export default function ReceiptDetail() {
               <TextInput
                 style={inputStyle}
                 value={total}
-                onChangeText={setTotal}
-                placeholder="0.00"
+                onChangeText={(text) => setTotal(formatTotalInput(text, total))}
+                placeholder="1.234,56"
                 placeholderTextColor={colors.icon}
                 keyboardType="decimal-pad"
               />
