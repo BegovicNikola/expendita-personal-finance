@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/theme";
-import { getReceiptById, updateReceipt } from "@/db/receipts";
+import { deleteReceipt, getReceiptById, updateReceipt } from "@/db/receipts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatDateParts, parseToISO } from "@/lib/date-utils";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -176,6 +176,28 @@ export default function ReceiptDetail() {
     }
   };
 
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Receipt",
+      "Are you sure you want to delete this receipt?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteReceipt(Number(id));
+              router.replace("/receipts");
+            } catch (error) {
+              console.error("Failed to delete receipt:", error);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const inputStyle = [
     styles.input,
     {
@@ -278,7 +300,7 @@ export default function ReceiptDetail() {
               style={[
                 styles.actionButton,
                 {
-                  backgroundColor: isEditing ? colors.tint : colorScheme === "dark" ? "#2A2E31" : "#E5E7EB",
+                  backgroundColor: isEditing ? "#0a7ea4" : colorScheme === "dark" ? "#2A2E31" : "#E5E7EB",
                   color: isEditing ? "#fff" : colors.text,
                   opacity: isSaving ? 0.6 : 1,
                 },
@@ -286,6 +308,15 @@ export default function ReceiptDetail() {
               onPress={handleEditSavePress}
             >
               {isSaving ? "Saving..." : isEditing ? "Save" : "Edit"}
+            </Text>
+            <Text
+              style={[
+                styles.actionButton,
+                styles.deleteButton,
+              ]}
+              onPress={handleDelete}
+            >
+              Delete
             </Text>
           </View>
         </ScrollView>
@@ -339,6 +370,7 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 32,
+    gap: 12,
   },
   actionButton: {
     fontSize: 16,
@@ -347,5 +379,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     overflow: "hidden",
+  },
+  deleteButton: {
+    backgroundColor: "#DC2626",
+    color: "#fff",
   },
 });

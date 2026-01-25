@@ -1,11 +1,11 @@
 import { QuickActionButtons } from "@/components/quick-action-buttons";
 import { ReceiptCard } from "@/components/receipt-card";
 import { Colors } from "@/constants/theme";
-import { deleteAllReceipts, getAllReceipts, Receipt } from "@/db/receipts";
+import { getAllReceipts, Receipt } from "@/db/receipts";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Receipts() {
@@ -24,12 +24,6 @@ export default function Receipts() {
       setIsLoading(false);
     }
   }, []);
-
-  // TODO: Remove this - dev only
-  const handleClearAll = async () => {
-    await deleteAllReceipts();
-    setReceipts([]);
-  };
 
   // Reload receipts when screen comes into focus
   useFocusEffect(
@@ -55,10 +49,6 @@ export default function Receipts() {
     >
       <View style={styles.headerRow}>
         <Text style={[styles.header, { color: colors.text }]}>Receipts</Text>
-        {/* TODO: Remove this - dev only */}
-        <TouchableOpacity onPress={handleClearAll}>
-          <Text style={{ color: "red", fontSize: 14 }}>Clear All</Text>
-        </TouchableOpacity>
       </View>
 
       <FlatList

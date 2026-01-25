@@ -94,9 +94,3 @@ export async function deleteReceipt(id: number): Promise<void> {
 
   await db.runAsync(`DELETE FROM receipts WHERE id = ?`, [id]);
 }
-
-// Clear all receipts from the database during development for a clean slate
-export async function deleteAllReceipts(): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync(`DELETE FROM receipts`);
-}
