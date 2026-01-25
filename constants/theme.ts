@@ -33,6 +33,11 @@ export const Colors = {
   },
 };
 
+export const SectionColors = {
+  light: { odd: '#F3F4F6', even: '#E8EDF2' },
+  dark: { odd: '#1A1C1E', even: '#252A2E' },
+};
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
