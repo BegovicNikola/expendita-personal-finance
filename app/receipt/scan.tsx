@@ -16,7 +16,7 @@ import {
 import type { RelativePathString } from "expo-router";
 
 import { ScannerOverlay } from "@/components/scanner-overlay";
-import { insertReceipt } from "@/db/receipts";
+import { insertReceipt, insertReceiptItems } from "@/db/receipts";
 import { detectQRType, parseNbsIps, parseSufPurs } from "@/lib/qr-parser";
 import {
   ReceiptScraper,
@@ -76,9 +76,6 @@ export default function ScanReceiptScreen() {
     setIsProcessing(true);
 
     const qrType = detectQRType(result.data);
-    console.log("Scanned QR code:", result.data);
-    console.log("Detected type:", qrType);
-
     if (qrType === "nbs-ips") {
       // Parse NBS IPS QR code directly
       const receipt = parseNbsIps(result.data);
@@ -113,7 +110,13 @@ export default function ScanReceiptScreen() {
     const receipt = parseSufPurs(data, scraperUrl!, rawQrData);
 
     try {
-      await insertReceipt(receipt);
+      const receiptId = await insertReceipt(receipt);
+      
+      // Insert receipt items if available
+      if (data.items && data.items.length > 0) {
+        await insertReceiptItems(receiptId, data.items);
+      }
+      
       // Navigate silently to receipts screen
       router.replace("/(tabs)/receipts" as RelativePathString);
     } catch (error) {

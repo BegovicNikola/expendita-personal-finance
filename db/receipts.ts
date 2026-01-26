@@ -9,6 +9,14 @@ export interface Receipt {
   rawData: string;
 }
 
+export interface ReceiptItem {
+  id: number;
+  receiptId: number;
+  name: string;
+  quantity: number;
+  totalPrice: number;
+}
+
 export async function insertReceipt(
   receipt: Omit<Receipt, "id">,
 ): Promise<number> {
@@ -93,4 +101,44 @@ export async function deleteReceipt(id: number): Promise<void> {
   const db = await getDatabase();
 
   await db.runAsync(`DELETE FROM receipts WHERE id = ?`, [id]);
+}
+
+// Receipt Items operations
+
+export async function insertReceiptItems(
+  receiptId: number,
+  items: Omit<ReceiptItem, "id" | "receiptId">[],
+): Promise<void> {
+  if (items.length === 0) return;
+
+  const db = await getDatabase();
+
+  for (const item of items) {
+    await db.runAsync(
+      `INSERT INTO receipt_items (receiptId, name, quantity, totalPrice) 
+       VALUES (?, ?, ?, ?)`,
+      [receiptId, item.name, item.quantity, item.totalPrice],
+    );
+  }
+}
+
+export async function getReceiptItems(
+  receiptId: number,
+): Promise<ReceiptItem[]> {
+  const db = await getDatabase();
+
+  const results = await db.getAllAsync<ReceiptItem>(
+    `SELECT * FROM receipt_items WHERE receiptId = ? ORDER BY id`,
+    [receiptId],
+  );
+
+  return results;
+}
+
+export async function deleteReceiptItems(receiptId: number): Promise<void> {
+  const db = await getDatabase();
+
+  await db.runAsync(`DELETE FROM receipt_items WHERE receiptId = ?`, [
+    receiptId,
+  ]);
 }

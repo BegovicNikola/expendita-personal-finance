@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { formatTotalInput } from "@/lib/number-utils";
+import { ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -27,6 +28,7 @@ interface ReceiptFormProps {
   editable?: boolean;
   showDelete?: boolean;
   onDelete?: () => void;
+  children?: ReactNode;
 }
 
 export function ReceiptForm({
@@ -38,6 +40,7 @@ export function ReceiptForm({
   editable = true,
   showDelete = false,
   onDelete,
+  children,
 }: ReceiptFormProps) {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
@@ -134,6 +137,8 @@ export function ReceiptForm({
             </View>
           </View>
         </View>
+
+        {children}
 
         <View style={styles.buttonContainer}>
           <Text
